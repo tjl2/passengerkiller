@@ -85,7 +85,7 @@ done
 framework_setup
 set_user
 debug "Extracting pids from ps for user '$user' using regex /$framework_ps_regex/ for application '$application'."
-pids=`get_pids_list`; debug "pids: $pids"
+pids=`get_pid_list`; debug "pids: $pids"
 
 for pid in $pids; do
   restart_instance $pid
