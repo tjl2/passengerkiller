@@ -44,16 +44,15 @@ function restart_instance {
   if [ -e /proc/$1 ]; then
     # Instance is still running
     echo " [FAILED]"
-    echo -n "Instance with PID $1 would not die gracefully, forcing..."
+    echo -n "  instance with PID $1 would not die gracefully, forcing..."
     kill -9 $1
 
     sleep 3
     if [ -e /proc/$1 ]; then
-      echo " [FALIED]"
+      echo " [FAILED]"
       echo "Instance with PID $1 will not die!"
       exit 1
     fi
-    echo " [OK]"
   fi
   echo " [OK]"
 }
