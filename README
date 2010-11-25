@@ -1,0 +1,13 @@
+Use this script to kill off all running Passenger instances.
+
+This is useful if you find that a standard Passenger restart is leaving old instances lying around.
+
+Perfect for use in an after_restart capistrano/engineyard deploy hook.
+
+NOTE: This is a quick hack put together to work on Engineyard AppCloud and it assumes your app lives in /data/ and the owner of that app is the owner of the Passenger processes.
+
+Example usage:
+  passengerkiller appname
+
+When using Rails 3, you will likely need to specify "-f rack":
+  passengerkiller appname -f rack
