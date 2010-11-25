@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# Passenger killer script - kill off passenger processes to ensure none hang around after restart
+
+function usage {
+cat <<USAGE
+
+Usage: $0 <application> [-f framework]
+
+  application - the name of the application
+
+  -f framework
+
+    The framework of the application (rails or rack).
+    Default is 'rails'.
+
+USAGE
+  exit 1
+}
+
+function framework_setup {
+  if [ -z "$framework" ] ; then
+    debug "framework not specified, defaulting to 'rails'"
+    framework="rails"
+  fi
+
+  if [ $framework = "rails" ] ; then 
+    framework_ps_regex="Rails"
+  else
+    framework_ps_regex="Rack"
+  fi
+  debug "framework set to $framework"
+}
+
+function set_user {
+  debug "setting user to owner of /data/$application"
+  user=`stat -c"%U" /data/$application`
+}
+
+function restart_instance {
+  echo -n "Asking $framework application '$application' instance with PID $1 to die gracefully..."
+  kill -USR1 $1
+  sleep 5
+  if [ -e /proc/$1 ]; then
+    # Instance is still running
+    echo " [FAILED]"
+    echo -n "Instance with PID $1 would not die gracefully, forcing..."
+    kill -9 $1
+
+    sleep 3
+    if [ -e /proc/$1 ]; then
+      echo " [FALIED]"
+      echo "Instance with PID $1 will not die!"
+      exit 1
+    fi
+    echo " [OK]"
+  fi
+  echo " [OK]"
+}
+
+function get_pid_list {
+  ps -U $user -o pid,comm,command | awk "/${framework_ps_regex}:/ { print \$1 }"
+}
+
+function debug {
+  if [[ $debug -eq 1 ]] ; then
+    echo $1
+  fi
+}
+
+
+# Main
+application=$1; shift 1
+if [ "$application" = "" ] || [ "$application" = "-h" ]; then
+  usage
+fi
+
+while getopts "f:D" option; do
+  case $option in
+    f) framework="$OPTARG" ;;
+    D) debug=1 ;;
+  esac
+done
+
+framework_setup
+set_user
+debug "Extracting pids from ps for user '$user' using regex /$framework_ps_regex/ for application '$application'."
+pids=`get_pids_list`; debug "pids: $pids"
+
+for pid in $pids; do
+  restart_instance $pid
+done
